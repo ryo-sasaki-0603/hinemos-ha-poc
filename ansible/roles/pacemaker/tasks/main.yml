@@ -1,0 +1,9 @@
+---
+- name: Install Pacemaker/PCS/Agents
+  ansible.builtin.dnf:
+    name: "{{ pacemaker_packages }}"
+    state: present
+
+# ここではPacemakerのクラスタ作成/認証/RA設定は"手動"前提。
+# 例：pcs cluster auth / setup / start、fencing(fence_aws)、VIP(ENI)とEBSのRA連携などを次工程で。
+# 共有EBSは /dev/xvdf を想定。mkfs/mountポイントは要件に合わせて後続で実施。

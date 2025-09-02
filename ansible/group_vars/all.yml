@@ -1,0 +1,39 @@
+common_packages:
+  - bind-utils
+  - sos
+  - unzip
+  - sysstat
+  - tcpdump
+  - gdb
+  - psmisc
+  - curl
+  - glibc-langpack-ja
+  - gssproxy
+  - rsync
+  - quota
+  - quota-nls
+  - keyutils
+  - nfs-utils
+  - tree
+  - wget
+  # ※ libmetalink / libverto-libev はRHEL9で名称差異あり。必要なら後で追加
+
+db2_prereq_packages:
+  - ksh
+  - libaio
+  - numactl
+  - pam
+  - which
+  - tar
+  - gzip
+  # - libxcrypt-compat  # 必要な場合（RHEL9で一部互換目的）
+
+pacemaker_packages:
+  - pacemaker
+  - pcs
+  - resource-agents
+  - fence-agents-aws
+  - resource-agents-cloud
+
+timezone: "Asia/Tokyo"
+vip_fqdn: "SASAKIDB-VIP"

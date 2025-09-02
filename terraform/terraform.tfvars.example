@@ -1,0 +1,5 @@
+region       = "ap-northeast-1"
+az           = "ap-northeast-1a"
+my_ip_cidr   = "YOUR.GLOBAL.IP.ADDR/32"
+key_name     = "your-ec2-keypair-name"
+vip_private_ip = "10.10.1.200"

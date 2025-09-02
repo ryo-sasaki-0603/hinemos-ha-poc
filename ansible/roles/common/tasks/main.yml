@@ -1,0 +1,49 @@
+---
+- name: Set timezone
+  ansible.builtin.timezone:
+    name: "{{ timezone }}"
+
+- name: Install common packages
+  ansible.builtin.dnf:
+    name: "{{ common_packages }}"
+    state: present
+
+- name: Set desired hostname (db only; safe to skip on others)
+  when: desired_hostname is defined
+  ansible.builtin.hostname:
+    name: "{{ desired_hostname }}"
+
+# /etc/hosts を整備（自ホスト、ピア、VIP FQDN）
+- name: Build hosts lines for DB pair
+  when: "'db' in group_names"
+  vars:
+    self_ip: "{{ hostvars[inventory_hostname].private_ip }}"
+    peer_ip: "{{ hostvars[inventory_hostname].peer_private_ip }}"
+    self_name: "{{ hostvars[inventory_hostname].desired_hostname }}"
+    peer_name: >-
+      {{ (groups['db'] |
+          map('extract', hostvars) |
+          selectattr('inventory_hostname', 'ne', inventory_hostname) |
+          map(attribute='desired_hostname') | list)[0] | default('SASAKIDBXX') }}
+    vip_ip: "{{ hostvars[inventory_hostname].vip_ip }}"
+  block:
+    - name: Add self host entry
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: ".*\\s+{{ self_name }}$"
+        line: "{{ self_ip }} {{ self_name }}"
+        state: present
+
+    - name: Add peer host entry
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: ".*\\s+{{ peer_name }}$"
+        line: "{{ peer_ip }} {{ peer_name }}"
+        state: present
+
+    - name: Add VIP FQDN entry
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: ".*\\s+{{ vip_fqdn }}$"
+        line: "{{ vip_ip }} {{ vip_fqdn }}"
+        state: present

@@ -1,0 +1,10 @@
+---
+# 実際のHinemosエージェントRPMの配布/導入は入手元に依存するため、
+# ここでは配置ディレクトリの確保のみ（後でRPM/設定を追加できます）
+- name: Ensure Hinemos agent directory exists
+  ansible.builtin.file:
+    path: /opt/hinemos_agent
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"

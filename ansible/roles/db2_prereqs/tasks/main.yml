@@ -1,0 +1,5 @@
+---
+- name: Install DB2 prerequisite packages
+  ansible.builtin.dnf:
+    name: "{{ db2_prereq_packages }}"
+    state: present

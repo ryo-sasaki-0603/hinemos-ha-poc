@@ -1,0 +1,6 @@
+[hinemos]
+${hinemos_name} ansible_host=${hinemos_host} ansible_user=${ansible_user} ansible_ssh_private_key_file=${ssh_key_path}
+
+[db]
+${db201_name} ansible_host=${db201_pub} ansible_user=${ansible_user} ansible_ssh_private_key_file=${ssh_key_path} desired_hostname=SASAKIDB01 private_ip=${db201_priv} peer_private_ip=${db202_priv} vip_ip=${vip_ip}
+${db202_name} ansible_host=${db202_pub} ansible_user=${ansible_user} ansible_ssh_private_key_file=${ssh_key_path} desired_hostname=SASAKIDB02 private_ip=${db202_priv} peer_private_ip=${db201_priv} vip_ip=${vip_ip}
