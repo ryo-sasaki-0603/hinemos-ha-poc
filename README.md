@@ -22,7 +22,6 @@ GitHub ページ右上の Fork をクリックして、自分のアカウント�
 自分のリポジトリから clone
 
 ```bash
-#コードをコピーする
 $ git clone https://github.com/<your-account>/hinemos-ha-poc.git
 $ cd hinemos-ha-poc
 ```
@@ -32,7 +31,6 @@ $ cd hinemos-ha-poc
 インストール (RHEL9)
 
 ```bash
-# コードをコピーする
 $ sudo dnf install -y wget unzip
 $ wget https://releases.hashicorp.com/terraform/1.8.5/terraform_1.8.5_linux_amd64.zip
 $ unzip terraform_1.8.5_linux_amd64.zip
@@ -43,7 +41,6 @@ $ terraform -v
 初期設定
 
 ```bash
-# コードをコピーする
 $ cd terraform
 $ cp terraform.tfvars.example terraform.tfvars
 # terraform.tfvars を編集（例: key_name, my_ip_cidr, vip_private_ip）
@@ -55,7 +52,6 @@ terraform init
 インストール
 
 ```bash
-#コードをコピーする
 $ sudo dnf install -y python3 python3-pip
 $ cd ansible
 $ python3 -m venv .venv
@@ -66,9 +62,65 @@ $ pip install -r requirements.txt
 疎通確認（Terraform で環境構築後）
 
 ```bash
-#コードをコピーする
 $ ansible -i inventory.ini all -m ping
 ```
+
+## AWS クレデンシャル準備
+
+Terraform や Pacemaker リソースエージェントが AWS を操作するために、事前に AWS CLI とクレデンシャルの設定が必要です。
+
+### 1. IAM ユーザー / IAM ロールの準備
+
+- **ローカルPCから Terraform を実行**する場合  
+  → IAM ユーザーを作成し、アクセスキー/シークレットキーを取得  
+- **EC2 上で Terraform や Pacemaker を実行**する場合  
+  → IAM ロールを EC2 にアタッチするのがおすすめ  
+
+必要な最小権限例：
+
+- `ec2:*` （VPC, EC2, EBS, ENI 作成/削除用）  
+- `ec2:AttachVolume` / `ec2:DetachVolume`  
+- `ec2:AssignPrivateIpAddresses` / `ec2:UnassignPrivateIpAddresses`  
+
+---
+
+### 2. AWS CLI インストール（RHEL9 の場合）
+
+```bash
+$ sudo dnf install -y unzip
+$ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+$ unzip awscliv2.zip
+$ sudo ./aws/install
+$ aws --version
+```
+
+### 3. AWS CLI 初期設定
+
+```bash
+$ aws configure
+入力項目例：
+AWS Access Key ID [None]: AKIAxxxxxxxxxxxxxxxx
+AWS Secret Access Key [None]: xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Default region name [None]: ap-northeast-1
+Default output format [None]: json
+```
+
+プロファイルを分けて管理する場合
+例えば hinemos-ha という名前で管理する場合：
+
+```bash
+$ aws configure --profile hinemos-ha
+```
+
+Terraform 側の設定例（terraform/provider.tf）：
+
+```hcl
+provider "aws" {
+  region  = "ap-northeast-1"
+  profile = "hinemos-ha"
+}
+```
+
 
 ## 環境展開手順
 
@@ -86,9 +138,9 @@ $ terraform apply -auto-approve
   - VIP用ENI
   - IAM Role (EBS/VIP操作権限)
 
-完了後、自動的に ansible/inventory.ini が生成されます。
+2. 完了後、自動的に ansible/inventory.ini が生成されます。
 
-1. Ansible で初期設定
+3. Ansible で初期設定
 
 ```bash
 $ cd ../ansible
@@ -123,6 +175,22 @@ $ sudo pcs cluster auth SASAKIDB01 SASAKIDB02 -u hacluster -p <password>
 $ sudo pcs cluster setup --name sasaki_cluster SASAKIDB01 SASAKIDB02
 $ sudo pcs cluster start --all
 $ sudo pcs cluster enable --all
+```
+
+クラスタ全体の状態確認：
+
+```bash
+$ pcs status
+```
+
+Active/Standby の切り替え（マニュアルフェイルオーバー）
+pcs node standby SASAKIDB01
+→ SASAKIDB01 が Standby になり、リソース（EBS + /disk01 マウント）が自動的に SASAKIDB02 へ移動します。
+
+再びアクティブに戻す
+
+```bash
+$ pcs node unstandby SASAKIDB01
 ```
 
 ### VIP リソース追加 (ENI付替)
